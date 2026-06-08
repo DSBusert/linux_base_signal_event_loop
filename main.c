@@ -39,8 +39,8 @@ int main()
       "this my fucking call back function\n");
   add_timer_event(1, mcb, "this second cb\n");
 #elif defined(STACK)
-  add_timer_event(1, 1, my_call_back,
-      "this my fucking call back function\n");
+  //add_timer_event(1, 1, my_call_back,
+    //  "this my fucking call back function\n");
   add_timer_event(1, 1, mcb, "this second cb\n");
 #endif
   while(1);

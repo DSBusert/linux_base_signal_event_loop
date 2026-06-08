@@ -1,5 +1,7 @@
 #include "timer_loop.h"
 
+#define STACK_P
+
 #define DEBUG 0
 
 #if defined(DEBUG) && DEBUG
@@ -11,7 +13,7 @@ static timer_node_t *timer_header = NULL;
 #ifdef STACK
 void timer_stack()
 {
-  timer_node_t **pp = &timer_header, *p = (*pp);
+  timer_node_t **pp = &timer_header, *p = (*pp); /*recode cur node*/
   while(*pp)
   {
     if((*pp)->sec_tval == 0 && (*pp)->cb != NULL)
@@ -23,7 +25,7 @@ void timer_stack()
       }
       else
       {
-       // pp = &(*pp)->net; /*will segmentation fault*/
+      // pp = &(*pp)->next; /*will segmentation fault*/
         *pp = p->next;
         free(p);
       }
@@ -34,6 +36,49 @@ void timer_stack()
       pp = &(*pp)->next;
     }
   }
+}
+
+void timer_stack_p()
+{
+  timer_node_t *cur = timer_header, *pre = NULL;
+
+  while(cur)
+  {
+  printf("cur:%p\n", cur);
+    if(cur->sec_tval == 0 && cur->cb != NULL)
+    {
+      int ret  = cur->cb(cur->arg);
+      if(ret > 0)
+      {
+        cur->sec_tval = cur->remain_sec;
+      }
+      else //delate node
+      {
+        //if head node
+        if(pre == NULL)
+        {
+          timer_header = cur->next;
+          free(cur);
+  printf("free:%p\n", cur);
+        cur = timer_header; // refresh cur,
+          continue;
+        }
+        else
+        {
+          pre->next = cur->next;
+          free(cur);
+        }
+      }
+    }
+    else
+    {
+      cur->sec_tval --;
+      
+      pre = cur;
+      cur = cur->next;
+    }
+  }
+ 
 }
 #endif
 
@@ -115,7 +160,11 @@ void sec_timer_base(int signal)
 {
   //printf("signal is %d\n", signal);
 #ifdef STACK
+#ifdef STACK_P
+  timer_stack_p();
+#else
   timer_stack();
+#endif
 #else
   timer_stick_loop();
 #endif
